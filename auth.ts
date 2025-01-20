@@ -4,8 +4,12 @@ import type { NextAuthConfig } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
-import { prisma } from '@/db/prisma';
-import { PrismaAdapter } from '@auth/prisma-adapter';
+import {
+  user as prismaUser,
+  cart as prismaCart,
+  authAdapter,
+} from '@/db/prisma';
+// import { PrismaAdapter } from '@auth/prisma-adapter';
 
 //import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -20,7 +24,7 @@ export const config = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60,
   },
-  adapter: PrismaAdapter(prisma),
+  adapter: authAdapter,
   providers: [
     CredentialsProvider({
       credentials: {
@@ -30,7 +34,7 @@ export const config = {
       async authorize(credentials) {
         if (credentials == null) return null;
 
-        const user = await prisma.user.findFirst({
+        const user = await prismaUser.findFirst({
           where: {
             email: credentials.email as string,
           },
@@ -82,7 +86,7 @@ export const config = {
           token.name = user.email!.split('@')[0];
 
           // Update database to reflect the token name
-          await prisma.user.update({
+          await prismaUser.update({
             where: { id: user.id },
             data: { name: token.name },
           });
@@ -93,13 +97,13 @@ export const config = {
           const sessionCartId = cookiesObject.get('sessionCartId')?.value;
 
           if (sessionCartId) {
-            const sessionCart = await prisma.cart.findFirst({
+            const sessionCart = await prismaCart.findFirst({
               where: { sessionCartId },
             });
 
             if (sessionCart) {
               // Delete current user cart
-              const res = await prisma.cart.deleteMany({
+              const res = await prismaCart.deleteMany({
                 where: {
                   AND: [
                     { userId: user.id },
@@ -107,10 +111,9 @@ export const config = {
                   ],
                 },
               });
-              console.log(res);
 
               // Assign new cart
-              await prisma.cart.update({
+              await prismaCart.update({
                 where: { id: sessionCart.id },
                 data: { userId: user.id },
               });
