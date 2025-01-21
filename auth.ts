@@ -27,30 +27,14 @@ export const config = {
         password: { type: 'password' },
       },
       async authorize(credentials) {
-        if (credentials == null) return null;
-
-        const user = await prismaUser.findFirst({
-          where: {
-            email: credentials.email as string,
-          },
-        });
-        if (user && user.password) {
-          //const isMatch = compareSync(
-          const isMatch = await compare(
-            credentials.password as string,
-            user.password
-          );
-          if (isMatch) {
-            return {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role,
-            };
-          }
-        }
-        // if the user does not exist or the passwords do not match - return null
-        return null;
+        const user = credentials as {
+          id: string;
+          name: string;
+          email: string;
+          role: string;
+        };
+        if (!credentials) return null;
+        return user;
       },
     }),
   ],

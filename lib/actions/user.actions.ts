@@ -9,7 +9,7 @@ import {
 import { auth, signIn, signOut } from '@/auth';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 //import { hashSync } from 'bcrypt-ts-edge';
-import { hash } from '@/lib/encrypt';
+import { compare, hash } from '@/lib/encrypt';
 
 import { prisma } from '@/db/prisma';
 import { formatError } from '@/lib/utils';
@@ -22,11 +22,27 @@ export async function signInWithCredentials(
   formData: FormData
 ) {
   try {
-    const user = signInFormSchema.parse({
+    const { email, password } = signInFormSchema.parse({
       email: formData.get('email'),
       password: formData.get('password'),
     });
-    await signIn('credentials', user);
+
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+      },
+    });
+    if (!user) throw new Error('No user found');
+
+    const isMatch = await compare(password, user.password as string);
+    if (!isMatch) throw new Error('Incorrect password');
+
+    await signIn('credentials', {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
     return { success: true, message: 'Signed in successfully' };
   } catch (error) {
     if (isRedirectError(error)) {
