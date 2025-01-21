@@ -4,6 +4,8 @@ import type { NextAuthConfig } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
+// TODO: try this - https://authjs.dev/guides/edge-compatibility
+
 import {
   user as prismaUser,
   cart as prismaCart,
