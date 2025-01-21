@@ -15,6 +15,7 @@ import { prisma } from '@/db/prisma';
 import { formatError } from '@/lib/utils';
 import { ShippingAddress } from '@/types';
 import { z } from 'zod';
+import { cookies } from 'next/headers';
 
 // Sign in the user with credentials
 export async function signInWithCredentials(
@@ -44,12 +45,35 @@ export async function signInWithCredentials(
       });
     }
 
-    await signIn('credentials', {
+    let userDetails = {
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
-    });
+    };
+    // handle session cart
+
+    const cookiesObject = await cookies();
+    const sessionCartId = cookiesObject.get('sessionCartId')?.value;
+
+    if (sessionCartId) {
+      const sessionCart = await prisma.cart.findFirst({
+        where: { sessionCartId },
+      });
+      if (sessionCart && sessionCart.userId !== user.id) {
+        await prisma.cart.deleteMany({
+          where: { userId: user.id },
+        });
+
+        // Assign new cart
+        await prisma.cart.update({
+          where: { id: sessionCart.id },
+          data: { userId: user.id },
+        });
+      }
+    }
+
+    await signIn('credentials', userDetails);
     return { success: true, message: 'Signed in successfully' };
   } catch (error) {
     if (isRedirectError(error)) {

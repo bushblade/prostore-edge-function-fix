@@ -1,15 +1,10 @@
-import { compare } from '@/lib/encrypt';
 import type { NextAuthConfig } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
 // TODO: try this - https://authjs.dev/guides/edge-compatibility
 
-import { cart as prismaCart } from '@/db/prisma';
-
-//import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
 export const config = {
   pages: {
@@ -59,35 +54,6 @@ export const config = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
-
-        if (trigger === 'signIn' || trigger === 'signUp') {
-          const cookiesObject = await cookies();
-          const sessionCartId = cookiesObject.get('sessionCartId')?.value;
-
-          if (sessionCartId) {
-            const sessionCart = await prismaCart.findFirst({
-              where: { sessionCartId },
-            });
-
-            if (sessionCart) {
-              // Delete current user cart
-              const res = await prismaCart.deleteMany({
-                where: {
-                  AND: [
-                    { userId: user.id },
-                    { NOT: { sessionCartId: sessionCartId } },
-                  ],
-                },
-              });
-
-              // Assign new cart
-              await prismaCart.update({
-                where: { id: sessionCart.id },
-                data: { userId: user.id },
-              });
-            }
-          }
-        }
       }
 
       // Handle session updates
