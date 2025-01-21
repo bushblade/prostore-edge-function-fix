@@ -35,4 +35,4 @@ export const prisma = prismaClient.$extends({
   },
 });
 
-export const { user, cart } = prisma;
+export const { cart } = prisma;

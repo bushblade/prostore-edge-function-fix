@@ -5,7 +5,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 
 // TODO: try this - https://authjs.dev/guides/edge-compatibility
 
-import { user as prismaUser, cart as prismaCart } from '@/db/prisma';
+import { cart as prismaCart } from '@/db/prisma';
 
 //import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -59,17 +59,6 @@ export const config = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
-
-        // If user has no name then use the email
-        if (user.name === 'NO_NAME') {
-          token.name = user.email!.split('@')[0];
-
-          // Update database to reflect the token name
-          await prismaUser.update({
-            where: { id: user.id },
-            data: { name: token.name },
-          });
-        }
 
         if (trigger === 'signIn' || trigger === 'signUp') {
           const cookiesObject = await cookies();

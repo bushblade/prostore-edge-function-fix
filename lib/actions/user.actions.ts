@@ -27,7 +27,7 @@ export async function signInWithCredentials(
       password: formData.get('password'),
     });
 
-    const user = await prisma.user.findFirst({
+    let user = await prisma.user.findFirst({
       where: {
         email,
       },
@@ -36,6 +36,13 @@ export async function signInWithCredentials(
 
     const isMatch = await compare(password, user.password as string);
     if (!isMatch) throw new Error('Incorrect password');
+
+    if (user.name === 'NO_NAME') {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { name: user.email.split('@')[0] },
+      });
+    }
 
     await signIn('credentials', {
       id: user.id,
@@ -60,24 +67,28 @@ export async function signOutUser() {
 // Sign up user
 export async function signUpUser(prevState: unknown, formData: FormData) {
   try {
-    const user = signUpFormSchema.parse({
+    const userInfo = signUpFormSchema.parse({
       name: formData.get('name'),
       email: formData.get('email'),
       password: formData.get('password'),
       confirmPassword: formData.get('confirmPassword'),
     });
-    const plainPassword = user.password;
-    //user.password = hashSync(user.password, 10);
-    user.password = await hash(user.password);
+    const plainPassword = userInfo.password;
+    userInfo.password = await hash(userInfo.password);
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
-        name: user.name,
-        email: user.email,
-        password: user.password,
+        name: userInfo.name,
+        email: userInfo.email,
+        password: userInfo.password,
       },
     });
-    await signIn('credentials', { email: user.email, password: plainPassword });
+    await signIn('credentials', {
+      email: user.email,
+      id: user.id,
+      name: user.name,
+      role: user.role,
+    });
 
     return { success: true, message: 'User registered successfully' };
   } catch (error) {
