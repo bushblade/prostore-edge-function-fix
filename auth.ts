@@ -1,4 +1,3 @@
-//import { compareSync } from 'bcrypt-ts-edge';
 import { compare } from '@/lib/encrypt';
 import type { NextAuthConfig } from 'next-auth';
 import NextAuth from 'next-auth';
@@ -6,12 +5,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 
 // TODO: try this - https://authjs.dev/guides/edge-compatibility
 
-import {
-  user as prismaUser,
-  cart as prismaCart,
-  authAdapter,
-} from '@/db/prisma';
-// import { PrismaAdapter } from '@auth/prisma-adapter';
+import { user as prismaUser, cart as prismaCart } from '@/db/prisma';
 
 //import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -26,7 +20,6 @@ export const config = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60,
   },
-  adapter: authAdapter,
   providers: [
     CredentialsProvider({
       credentials: {
