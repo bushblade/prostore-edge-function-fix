@@ -45,14 +45,7 @@ export async function signInWithCredentials(
       });
     }
 
-    let userDetails = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
     // handle session cart
-
     const cookiesObject = await cookies();
     const sessionCartId = cookiesObject.get('sessionCartId')?.value;
 
@@ -73,7 +66,12 @@ export async function signInWithCredentials(
       }
     }
 
-    await signIn('credentials', userDetails);
+    await signIn('credentials', {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
     return { success: true, message: 'Signed in successfully' };
   } catch (error) {
     if (isRedirectError(error)) {
